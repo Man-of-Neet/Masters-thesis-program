@@ -14,6 +14,7 @@ if __name__ == '__main__':
     t2 = time.time()
     link = myfunc.link_init()
     outbreak = 0
+    call_loss = 0
 
     #以下、ループ処理
     while outbreak <= 100000:
