@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 from numpy.random import poisson #use_poisson
 import myfunc
 
+av_suvtime = 180.0
 if __name__ == '__main__':
+
     t1 = time.time()
     graph = myfunc.add_node_and_edge()
     t2 = time.time()
@@ -35,9 +37,11 @@ if __name__ == '__main__':
                     edge_list[i] = j
                     continue
         print(edge_list)
+        '''
         print (nx.dijkstra_path_length(graph, str(start), str(goal)))
-        slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(start), str(goal)))
-
+        '''
+        slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(start), str(goal)), av_suvtime)
+        print('seizon' + str(surv_time))
         #収容可否確認
         sum_link_status = [0 for i in range(100)]
         for i in range(len(edge_list)):
@@ -70,14 +74,16 @@ if __name__ == '__main__':
                     link[int(edge_list[i])][avoid[j]].suvtime = surv_time
         else:
             call_loss += 1
-            print(call_loss)
+            print("call_loss:" + str(call_loss))
 
+        #表示がヤバイデバッグ用
         for i in range(len(link)):
             print()
             print('link' + str(i))
             for j in range(100):
-                print(link[i][j].sl_status, end=", ")
-        print ("slot = " + str(slot) + ", survival = " + str(surv_time) + " ,next_breaktime = " + str(myfunc.next_node_event(0.01)))
+                print(link[i][j].suvtime, end=", ")
+
+        print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
         outbreak +=1
 
     t3 = time.time()

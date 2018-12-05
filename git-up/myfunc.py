@@ -23,7 +23,7 @@ def define_passroot():
     return Start, Goal
 
 #リファクタリング必須
-def define_pass_condition(length):
+def define_pass_condition(length, av_suvtime):
     band = 12.5
     if length <= 600:
         m_level = 10000
@@ -37,7 +37,9 @@ def define_pass_condition(length):
         m_level = 10000 / 16
     data_size = random.randint(1, 10000)
     sl = math.ceil(data_size / m_level)
-    surv = np.random.poisson(lam=100.)
+    surv = np.random.normal() * av_suvtime
+    if surv < 0:
+        surv *= -1
     return sl, surv
 
 def break_node_all(node_event, estimate_time, restart_average):
