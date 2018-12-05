@@ -69,7 +69,9 @@ if __name__ == '__main__':
                     link[int(edge_list[i])][avoid[j]].sl_status = slot
                     link[int(edge_list[i])][avoid[j]].suvtime = surv_time
         else:
-            print('out!!')
+            call_loss += 1
+            print(call_loss)
+
         for i in range(len(link)):
             print()
             print('link' + str(i))
