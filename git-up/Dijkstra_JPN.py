@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
     #以下、ループ処理
     while outbreak <= 100000:
+        outbreak +=1
         start, goal = myfunc.define_passroot()
         print ("from:"+ str(start) +" to:"+ str(goal), end=" ")
         #passnodeはlist型
@@ -47,14 +48,14 @@ if __name__ == '__main__':
         for i in range(len(edge_list)):
             use_link = edge_list[i]
             for j in range(100):
-                sum_link_status[j] += link[use_link][j].sl_status
+                sum_link_status[j] += link[use_link][j].conection_number
         #呼損
         #パス収容
         available_slot = 0
         avoid = [0 for i in range(slot)]
         for i in range(len(sum_link_status)):
             if sum_link_status[i] == 0:
-                print(avoid)
+                print("avoid:" + str(avoid))
                 print(i)
                 avoid[available_slot] = i
                 available_slot +=1
@@ -70,21 +71,23 @@ if __name__ == '__main__':
         if available == 1:
             for i in range(len(edge_list)):
                 for j in range(len(avoid)):
-                    link[int(edge_list[i])][avoid[j]].sl_status = slot
+                    link[int(edge_list[i])][avoid[j]].conection_number = outbreak
                     link[int(edge_list[i])][avoid[j]].suvtime = surv_time
+                    link[int(edge_list[i])][avoid[j]].start = start
+                    link[int(edge_list[i])][avoid[j]].goal = goal
         else:
             call_loss += 1
             print("call_loss:" + str(call_loss))
 
         #表示がヤバイデバッグ用
-        for i in range(len(link)):
-            print()
-            print('link' + str(i))
-            for j in range(100):
-                print(link[i][j].suvtime, end=", ")
+        if available == 1:
+            for i in range(len(edge_list)):
+                print('conection_number:' + str(outbreak))
+                print('link' + str(edge_list[i]))
+                for j in range(100):
+                    print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
 
         print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
-        outbreak +=1
 
     t3 = time.time()
 
