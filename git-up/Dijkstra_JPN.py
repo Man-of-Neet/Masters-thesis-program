@@ -17,6 +17,7 @@ if __name__ == '__main__':
     link = myfunc.link_init()
     outbreak = 0
     call_loss = 0
+    lam = 100
 
     #以下、ループ処理
     while outbreak <= 100000:
@@ -76,16 +77,30 @@ if __name__ == '__main__':
                     link[int(edge_list[i])][avoid[j]].start = start
                     link[int(edge_list[i])][avoid[j]].goal = goal
         else:
+            print(outbreak)
             call_loss += 1
             print("call_loss:" + str(call_loss))
 
+        #時間を進める
+        foword = np.random.exponential(1/lam)
+        for i in range(len(link)):
+            for j in range(100):
+                if link[i][j].suvtime > 0.0:
+                    link[i][j].suvtime -= foword
+                    if link[i][j].suvtime < 0:
+                        print("syokika")
+                        link[i][j].conection_number = 0
+                        link[i][j].suvtime = 0
+                        link[i][j].start = 0.0
+                        link[i][j].goal = 0
+        print(foword)
         #表示がヤバイデバッグ用
-        if available == 1:
-            for i in range(len(edge_list)):
-                print('conection_number:' + str(outbreak))
-                print('link' + str(edge_list[i]))
-                for j in range(100):
-                    print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
+        # if available == 1:
+        #     for i in range(len(edge_list)):
+        #         print('conection_number:' + str(outbreak))
+        #         print('link' + str(edge_list[i]))
+        #         for j in range(100):
+        #             print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
 
         print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
 
