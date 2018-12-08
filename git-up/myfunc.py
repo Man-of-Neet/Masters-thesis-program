@@ -95,11 +95,11 @@ def add_node_and_edge():
     return graph
 
 def link_init():
-    link = [[i for i in range(100)] for j in range(18)]
+    link = [[i for i in range(200)] for j in range(18)]
     edge1 = [0, 1,1,2,3,3,4,5,5,6,7, 7,8, 9, 9,10,10,11]
     edge2 = [0, 2,4,3,4,7,5,6,7,8,8,10,9,10,11,11,12,12]
     for i in range(len(link)):
         for j in range(100):
             link[i][j] = Fiber(0, 0.0 , 0, 0, edge1[i], edge2[i])
-    print(len(link))
+    #print(len(link))
     return link
