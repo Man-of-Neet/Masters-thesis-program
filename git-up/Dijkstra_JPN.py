@@ -14,8 +14,7 @@ if __name__ == '__main__':
     graph = myfunc.add_node_and_edge()
     t2 = time.time()
     lam = 1
-    av_suvtime = 30.0
-
+    av_suvtime = 10.0
     #以下、ループ処理
     #ループ1,負荷変更
     while lam * av_suvtime <= 300:
