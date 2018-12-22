@@ -54,7 +54,7 @@ def break_node_all(node_event, estimate_time, restart_average):
         print(str(restart))
         return node, event_time, restart
 
-def next_node_event(lam):
+def next_edge_event(lam):
     # 1分あたりlam回発生する。
     event = rd.exponential(1./lam)
     return event
@@ -92,6 +92,7 @@ def add_node_and_edge():
     graph.add_edge('10', '11', len = 365, weight=365)#15
     graph.add_edge('10', '12', len = 1158, weight=1158)#16
     graph.add_edge('11', '12', len = 911, weight=911)#17
+    #print(graph.edges())
     return graph
 
 def link_init():
@@ -103,3 +104,22 @@ def link_init():
             link[i][j] = Fiber(0, 0.0 , 0, 0, edge1[i], edge2[i])
     #print(len(link))
     return link
+
+def choose_edge(passnode, link):
+    edge_list = [0 for i in range(len(passnode)-1)]
+    for i in range(len(passnode)-1):
+        for j in range(len(link)):
+            if (link[j][0].conection1 == int(passnode[i]) and link[j][0].conection2 == int(passnode[i + 1])):
+                edge_list[i] = j
+                continue
+            elif(link[j][0].conection1 == int(passnode[i + 1]) and link[j][0].conection2 == int(passnode[i])):
+                edge_list[i] = j
+                continue
+    return edge_list
+
+def break_edge(link):
+    choose = random.randint(1, 17)
+    #print(choose)
+    S = link[choose][0].conection1
+    G = link[choose][0].conection2
+    #print(str(S) + "," + str(G))

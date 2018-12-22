@@ -15,6 +15,10 @@ if __name__ == '__main__':
     t2 = time.time()
     lam = 1
     av_suvtime = 10.0
+    edge_break = 0
+    edge_event = 0.0
+    restart_average = 300
+    incount = 0
     #以下、ループ処理
     #ループ1,負荷変更
     while lam * av_suvtime <= 300:
@@ -25,25 +29,26 @@ if __name__ == '__main__':
         while outbreak <= 100000:
             outbreak +=1
             start, goal = myfunc.define_passroot()
-            #print ("from:"+ str(start) +" to:"+ str(goal), end=" ")
-            #passnodeはlist型
+            if edge_event <= 0:
+                #故障ノードがなければ edge_break = 0
+                if edge_break == 0:
+                    myfunc.break_edge(link)
+                    edge_break = 1
+                    edge_event = np.random.normal() * restart_average
+                    if edge_event < 0:
+                        edge_event *= -1
+                    #print("break," + str(outbreak) + "," + str(edge_event))
+
+                elif edge_break == 1:
+                    #print("reset," + str(outbreak))
+                    graph = myfunc.add_node_and_edge()
+                    edge_break = 0
+                    #1秒に平均何回発生する事象か？
+                    edge_event = myfunc.next_edge_event(1/100)
+
             passnode = nx.dijkstra_path(graph, str(start), str(goal))
-            #print (passnode, end="")
-            #print(len(passnode))
-            #経由ノードから経由エッジを取得
-            edge_list = [0 for i in range(len(passnode)-1)]
-            for i in range(len(passnode)-1):
-                for j in range(len(link)):
-                    if (link[j][0].conection1 == int(passnode[i]) and link[j][0].conection2 == int(passnode[i + 1])):
-                        edge_list[i] = j
-                        continue
-                    elif(link[j][0].conection1 == int(passnode[i + 1]) and link[j][0].conection2 == int(passnode[i])):
-                        edge_list[i] = j
-                        continue
-            #print(edge_list)
-            '''
-            print (nx.dijkstra_path_length(graph, str(start), str(goal)))
-            '''
+
+            edge_list = myfunc.choose_edge(passnode, link)
             slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(start), str(goal)), av_suvtime)
             #print('seizon' + str(surv_time))
             #収容可否確認
@@ -85,6 +90,7 @@ if __name__ == '__main__':
 
             #時間を進める
             foword = np.random.exponential(1/lam)
+            edge_event -= foword
             for i in range(len(link)):
                 for j in range(100):
                     if link[i][j].suvtime > 0.0:
@@ -105,7 +111,8 @@ if __name__ == '__main__':
             #             print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
 
             #print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
-        print (str(lam * av_suvtime) + ", " + str(float(call_loss / outbreak)))
+        print (str(incount) +",,"+ str(lam * av_suvtime) + ", " + str(float(call_loss / outbreak)))
+        incount += 1
         lam += 1
     t3 = time.time()
 
