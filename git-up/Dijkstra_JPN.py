@@ -27,12 +27,12 @@ if __name__ == '__main__':
         link = myfunc.link_init()
         #ループ2,100000呼発生
         while outbreak <= 100000:
-            outbreak +=1
+            outbreak += 1
             start, goal = myfunc.define_passroot()
             if edge_event <= 0:
                 #故障ノードがなければ edge_break = 0
                 if edge_break == 0:
-                    myfunc.break_edge(link)
+                    myfunc.break_edge(link, graph)
                     edge_break = 1
                     edge_event = np.random.normal() * restart_average
                     if edge_event < 0:

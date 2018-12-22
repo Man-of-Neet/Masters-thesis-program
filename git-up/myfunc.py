@@ -117,9 +117,11 @@ def choose_edge(passnode, link):
                 continue
     return edge_list
 
-def break_edge(link):
+def break_edge(link, graph):
     choose = random.randint(1, 17)
     #print(choose)
     S = link[choose][0].conection1
     G = link[choose][0].conection2
-    #print(str(S) + "," + str(G))
+    graph.remove_edge(str(S), str(G))
+    print("remove_edge = " + str(choose))
+    print(graph.edges())
