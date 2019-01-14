@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 from numpy.random import poisson #use_poisson
 
 class Fiber(list):
-    def __init__(self, conection_number: int, suvtime: float, start: int, goal: int, conection1: int, conection2: int) -> None:
+    def __init__(self, conection_number: int, data_size: int, suvtime: float, start: int, goal: int, conection1: int, conection2: int) -> None:
         self.conection_number = conection_number
+        self.data_s = data_size
         self.suvtime = suvtime
         self.start = start
         self.goal = goal
@@ -25,7 +26,7 @@ def define_passroot():
     return Start, Goal
 
 #リファクタリング必須
-def define_pass_condition(length, av_suvtime):
+def define_pass_condition(length, av_suvtime, data_size):
     band = 12.5
     if length <= 600:
         m_level = 10000
@@ -37,9 +38,8 @@ def define_pass_condition(length, av_suvtime):
         m_level = 10000 / 8
     elif length <= 9600:
         m_level = 10000 / 16
-    data_size = random.randint(1, 10000)
     sl = math.ceil(data_size / m_level)
-    surv = np.random.normal() * av_suvtime
+    surv = np.random.exponential(av_suvtime)
     if surv < 0:
         surv *= -1
     return sl, surv
@@ -49,9 +49,11 @@ def break_node_all(node_event, estimate_time, restart_average):
         node = random.randint(1, 12)
         event_time = poisson(estimate_time, 1)
         restart = random.random() * restart_average
+        '''
         print(str(node))
         print(str(event_time))
         print(str(restart))
+        '''
         return node, event_time, restart
 
 def next_edge_event(lam):
@@ -61,6 +63,7 @@ def next_edge_event(lam):
 
 def add_node_and_edge():
     graph = nx.Graph()
+    graph.clear()
     # ノードを追加する
     graph.add_node('1')
     graph.add_node('2')
@@ -100,10 +103,17 @@ def link_init():
     edge1 = [0, 1,1,2,3,3,4,5,5,6,7, 7,8, 9, 9,10,10,11]
     edge2 = [0, 2,4,3,4,7,5,6,7,8,8,10,9,10,11,11,12,12]
     for i in range(len(link)):
-        for j in range(100):
-            link[i][j] = Fiber(0, 0.0 , 0, 0, edge1[i], edge2[i])
+        for j in range(200):
+            link[i][j] = Fiber(0, 0, 0.0 , 0, 0, edge1[i], edge2[i])
     #print(len(link))
     return link
+
+def tmp_init():
+    tmp = [0 for i in range(200)]
+    for i in range(len(tmp)):
+        tmp[i] = Fiber(0, 0, 0.0 , 0, 0, 0, 0)
+    #print(len(link))
+    return tmp
 
 def choose_edge(passnode, link):
     edge_list = [0 for i in range(len(passnode)-1)]
@@ -123,5 +133,50 @@ def break_edge(link, graph):
     S = link[choose][0].conection1
     G = link[choose][0].conection2
     graph.remove_edge(str(S), str(G))
-    print("remove_edge = " + str(choose))
-    print(graph.edges())
+    #print("remove_edge = " + str(choose))
+    #print(graph.edges())
+    return choose
+
+def link_release(link, l_num, s_num):
+    link[l_num][s_num].conection_number = 0
+    link[l_num][s_num].suvtime = 0
+    link[l_num][s_num].start = 0
+    link[l_num][s_num].goal = 0
+    link[l_num][s_num].data_s = 0
+
+def path_acomodate_process(link, slot, outbreak, surv_time, start, goal, data_size, edge_list):
+    #使用リンクの連続性確認
+    sum_link_status = [0 for i in range(200)]
+    for i in range(len(edge_list)):
+        use_link = edge_list[i]
+        for j in range(200):
+            sum_link_status[j] += link[use_link][j].conection_number
+
+    #収容可否確認
+    available_slot = 0
+    avoid = [0 for i in range(slot)]
+    for i in range(len(sum_link_status)):
+        if sum_link_status[i] == 0:
+            #print("avoid:" + str(avoid))
+            #print(i)
+            avoid[available_slot] = i
+            available_slot +=1
+            if available_slot == slot:
+                available = 1
+                break
+        else:
+            available_slot = 0
+            available = 0
+
+    if available == 1:
+        for i in range(len(edge_list)):
+            for j in range(len(avoid)):
+                link[int(edge_list[i])][avoid[j]].conection_number = outbreak
+                link[int(edge_list[i])][avoid[j]].suvtime = surv_time
+                link[int(edge_list[i])][avoid[j]].start = start
+                link[int(edge_list[i])][avoid[j]].goal = goal
+                link[int(edge_list[i])][avoid[j]].data_s = data_size
+        return True
+
+    else:
+        return False
