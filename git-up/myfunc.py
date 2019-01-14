@@ -4,7 +4,6 @@ import math
 import networkx as nx
 import numpy as np
 import numpy.random as rd
-import matplotlib.pyplot as plt
 from numpy.random import poisson #use_poisson
 
 class Fiber(list):

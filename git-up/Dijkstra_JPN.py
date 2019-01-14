@@ -4,7 +4,6 @@ import math
 import networkx as nx
 import numpy as np
 import numpy.random as rd
-import matplotlib.pyplot as plt
 from numpy.random import poisson #use_poisson
 import myfunc
 
@@ -19,6 +18,8 @@ if __name__ == '__main__':
     edge_event = 0.0
     restart_average = 1000
     average_edge_breakforward = 1000
+    #ファイル作成及び、書き込み準備
+    f = open('test.txt','a')
     #以下、ループ処理
     #ループ1,負荷変更
     while average_edge_breakforward >= 0:
@@ -128,27 +129,10 @@ if __name__ == '__main__':
                     #             print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
 
                     #print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
-                print (str(average_edge_breakforward) +","+ str(restart_average) +","+ str(lam * av_suvtime) +","+ str(float(call_loss / outbreak)))
+                f.write (str(average_edge_breakforward) +","+ str(restart_average) +","+ str(lam * av_suvtime) +","+ str(float(call_loss / outbreak)))
                 lam += 0.1
             restart_average -= 50
         average_edge_breakforward -= 50
 
-    t3 = time.time()
-
-    elapsed_time = t2-t1
-    print(f"経過時間：{elapsed_time}")
-    elapsed_time = t3-t2
-    print(f"経過時間：{elapsed_time}")
-
-    # レイアウトの取得
-
-    pos = nx.spring_layout(graph)
-
-    # 可視化
-
-    plt.figure(figsize=(12, 12))
-    nx.draw_networkx_edges(graph, pos)
-    nx.draw_networkx_nodes(graph, pos, font_size=16)
-    nx.draw_networkx_labels(graph, pos, font_size=16, font_color="b")
-    plt.axis('off')
-    plt.show()
+    #ファイル閉じる
+    f.close()
