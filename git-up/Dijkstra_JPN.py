@@ -4,122 +4,135 @@ import math
 import networkx as nx
 import numpy as np
 import numpy.random as rd
-import matplotlib.pyplot as plt
 from numpy.random import poisson #use_poisson
 import myfunc
 
-av_suvtime = 180.0
 if __name__ == '__main__':
 
     t1 = time.time()
     graph = myfunc.add_node_and_edge()
     t2 = time.time()
-    link = myfunc.link_init()
-    outbreak = 0
-    call_loss = 0
-    lam = 100
-
+    lam = 0.1
+    av_suvtime = 180.0
+    edge_break = 0
+    edge_event = 0.0
+    restart_average = 1000
+    average_edge_breakforward = 1000
+    #ファイル作成及び、書き込み準備
+    f = open('test.txt','a')
     #以下、ループ処理
-    while outbreak <= 100000:
-        outbreak +=1
-        start, goal = myfunc.define_passroot()
-        print ("from:"+ str(start) +" to:"+ str(goal), end=" ")
-        #passnodeはlist型
-        passnode = nx.dijkstra_path(graph, str(start), str(goal))
-        print (passnode, end="")
-        print(len(passnode))
-        #経由ノードから経由エッジを取得
-        edge_list = [0 for i in range(len(passnode)-1)]
-        for i in range(len(passnode)-1):
-            for j in range(len(link)):
-                if (link[j][0].conection1 == int(passnode[i]) and link[j][0].conection2 == int(passnode[i + 1])):
-                    edge_list[i] = j
-                    continue
-                elif(link[j][0].conection1 == int(passnode[i + 1]) and link[j][0].conection2 == int(passnode[i])):
-                    edge_list[i] = j
-                    continue
-        print(edge_list)
-        '''
-        print (nx.dijkstra_path_length(graph, str(start), str(goal)))
-        '''
-        slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(start), str(goal)), av_suvtime)
-        print('seizon' + str(surv_time))
-        #収容可否確認
-        sum_link_status = [0 for i in range(100)]
-        for i in range(len(edge_list)):
-            use_link = edge_list[i]
-            for j in range(100):
-                sum_link_status[j] += link[use_link][j].conection_number
-        #呼損
-        #パス収容
-        available_slot = 0
-        avoid = [0 for i in range(slot)]
-        for i in range(len(sum_link_status)):
-            if sum_link_status[i] == 0:
-                print("avoid:" + str(avoid))
-                print(i)
-                avoid[available_slot] = i
-                available_slot +=1
-                if available_slot == slot:
-                    available = 1
-                    break
-            else:
-                available_slot = 0
-                available = 0
+    #ループ1,負荷変更
+    while average_edge_breakforward >= 0:
+        restart_average = 1000
+        while restart_average >= 0:
+            lam = 0.1
+            while lam * av_suvtime <= 300:
+                outbreak = 0
+                call_loss = 0
+                call_succes = 0
+                conection_bool = False
+                link = myfunc.link_init()
+                #ループ2,100000呼発生
+                while outbreak <= 100000:
+                    outbreak += 1
+                    start, goal = myfunc.define_passroot()
+                    if edge_event <= 0:
+                        #故障ノードがなければ edge_break = 0
+                        if edge_break == 0:
+                            choose = myfunc.break_edge(link, graph)
+                            edge_break = 1
+                            edge_event = np.random.exponential(restart_average)
+                            tmp_link = myfunc.tmp_init()
+                            #エッジ故障時、再配置するコネクションを格納
+                            for i in range(len(tmp_link)):
+                                tmp_link[i].conection_number = link[choose][i].conection_number
+                                tmp_link[i].start = link[choose][i].start
+                                tmp_link[i].goal = link[choose][i].goal
+                                tmp_link[i].suvtime = link[choose][i].suvtime
+                                tmp_link[i].data_s = link[choose][i].data_s
+                                #print(str(tmp_link[i].data_s) + "," , end=" " )
+                            #print("")
 
-        print (available_slot)
-        print (avoid)
-        if available == 1:
-            for i in range(len(edge_list)):
-                for j in range(len(avoid)):
-                    link[int(edge_list[i])][avoid[j]].conection_number = outbreak
-                    link[int(edge_list[i])][avoid[j]].suvtime = surv_time
-                    link[int(edge_list[i])][avoid[j]].start = start
-                    link[int(edge_list[i])][avoid[j]].goal = goal
-        else:
-            print(outbreak)
-            call_loss += 1
-            print("call_loss:" + str(call_loss))
+                            #エッジ故障によるコネクションの瞬断
+                            for i in range(len(link)):
+                                for j in range(len(link[i])):
+                                    if tmp_link[j].conection_number == link[i][j].conection_number:
+                                        myfunc.link_release(link, i, j)
 
-        #時間を進める
-        foword = np.random.exponential(1/lam)
-        for i in range(len(link)):
-            for j in range(100):
-                if link[i][j].suvtime > 0.0:
-                    link[i][j].suvtime -= foword
-                    if link[i][j].suvtime < 0:
-                        print("syokika")
-                        link[i][j].conection_number = 0
-                        link[i][j].suvtime = 0
-                        link[i][j].start = 0.0
-                        link[i][j].goal = 0
-        print(foword)
-        #表示がヤバイデバッグ用
-        # if available == 1:
-        #     for i in range(len(edge_list)):
-        #         print('conection_number:' + str(outbreak))
-        #         print('link' + str(edge_list[i]))
-        #         for j in range(100):
-        #             print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
+                            #コネクション再配置
+                            tmp_conection = 0
+                            for i in range(len(tmp_link)):
+                                if tmp_link[i].conection_number != 0 and tmp_conection != tmp_link[i].conection_number:
+                                    tmp_conection = tmp_link[i].conection_number
+                                    if tmp_link[i].conection_number != 0 and tmp_conection == tmp_link[i].conection_number:
+                                        passnode = nx.dijkstra_path(graph, str(tmp_link[i].start), str(tmp_link[i].goal))
+                                        edge_list = myfunc.choose_edge(passnode, link)
+                                        data_size = tmp_link[i].data_s
+                                        slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(tmp_link[i].start), str(tmp_link[i].goal)), av_suvtime, tmp_link[i].data_s)
+                                        surv_time = tmp_link[i].suvtime
 
-        print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
+                                        #print(edge_list)
+                                        #print(slot, end=",")
+                                        # print(surv_time, end=",")
+                                        # print(data_size, end=",")
+                                        # print(tmp_link[i].conection_number, end=",")
+                                        # conection_bool = myfunc.path_acomodate_process(link, slot, tmp_link[i].conection_number, surv_time, start, goal, data_size, edge_list)
+                                        # print(conection_bool)
+                                        if conection_bool == False:
+                                            call_loss += 1
 
-    t3 = time.time()
+                            if edge_event < 0:
+                                edge_event *= -1
+                            #print("break," + str(outbreak) + "," + str(edge_event))
 
-    elapsed_time = t2-t1
-    print(f"経過時間：{elapsed_time}")
-    elapsed_time = t3-t2
-    print(f"経過時間：{elapsed_time}")
+                        elif edge_break == 1:
+                            #print("reset," + str(outbreak))
+                            graph = myfunc.add_node_and_edge()
+                            edge_break = 0
+                            #1秒に平均何回発生する事象か？
+                            edge_event = myfunc.next_edge_event(1/average_edge_breakforward)
 
-    # レイアウトの取得
+                    passnode = nx.dijkstra_path(graph, str(start), str(goal))
+                    edge_list = myfunc.choose_edge(passnode, link)
+                    data_size = random.randint(1, 10000)
+                    slot, surv_time = myfunc.define_pass_condition(nx.dijkstra_path_length(graph, str(start), str(goal)), av_suvtime, data_size)
+                    #print('seizon' + str(surv_time))
 
-    pos = nx.spring_layout(graph)
+                    #パス収容
+                    conection_bool = myfunc.path_acomodate_process(link, slot, outbreak, surv_time, start, goal, data_size, edge_list)
 
-    # 可視化
+                    #呼損の有無
+                    if conection_bool == False:
+                        call_loss += 1
+                    else:
+                        call_succes += 1
 
-    plt.figure(figsize=(12, 12))
-    nx.draw_networkx_edges(graph, pos)
-    nx.draw_networkx_nodes(graph, pos, font_size=16)
-    nx.draw_networkx_labels(graph, pos, font_size=16, font_color="b")
-    plt.axis('off')
-    plt.show()
+                    #呼損がちゃんとカウントできているか？
+                    #print(str(call_loss) + "+" + str(call_succes) + "/" + str(outbreak))
+                    #時間を進める
+                    foword = np.random.exponential(1/lam)
+                    edge_event -= foword
+                    for i in range(len(link)):
+                        for j in range(200):
+                            if link[i][j].suvtime > 0.0:
+                                link[i][j].suvtime -= foword
+                                if link[i][j].suvtime < 0:
+                                    #print("syokika")
+                                    myfunc.link_release(link, i, j)
+                    #print(foword)
+                    #表示がヤバイデバッグ用
+                    # if available == 1:
+                    #     for i in range(len(edge_list)):
+                    #         print('conection_number:' + str(outbreak))
+                    #         print('link' + str(edge_list[i]))
+                    #         for j in range(100):
+                    #             print("(" + str(link[edge_list[i]][j].start) + ", " + str(link[edge_list[i]][j].goal) + ", " + str(link[edge_list[i]][j].conection_number) + ")", end=", ")
+
+                    #print("slot = " + str(slot) + ", survival = " + str(surv_time) + ", next_breaktime = " + str(myfunc.next_node_event(0.01)))
+                f.write (str(average_edge_breakforward) +","+ str(restart_average) +","+ str(lam * av_suvtime) +","+ str(float(call_loss / outbreak)))
+                lam += 0.1
+            restart_average -= 50
+        average_edge_breakforward -= 50
+
+    #ファイル閉じる
+    f.close()
